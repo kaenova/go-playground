@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package rpc;
+
+option go_package = "rpc_chunk_file/service/upload";
+
+message ReqBuffer {
+  string fileName = 1;
+  bytes data = 2;
+}
+
+message ResBuffer {
+  /*
+    Status Field
+    0 = Failed
+    1 = Success
+  */
+  int32 status = 1;
+  string Message = 2;
+  string fileName = 3;
+}
+
+service UploadService {
+  rpc Upload(stream ReqBuffer) returns (ResBuffer) {}
+}
