@@ -1,4 +1,4 @@
-module test-go
+module github.com/kaenova/go-playground
 
 go 1.17
 

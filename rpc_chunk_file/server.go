@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"test-go/rpc_chunk_file/service/upload"
+
+	"github.com/kaenova/go-playground/rpc_chunk_file/service/upload"
 
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog/log"
