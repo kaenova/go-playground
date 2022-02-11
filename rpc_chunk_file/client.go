@@ -67,8 +67,7 @@ func main() {
 			log.Fatal().Err(err)
 		}
 		err = svc.Send(&upload.ReqBuffer{
-			FileName: "Testing",
-			Data:     buf,
+			Data: buf,
 		})
 		if err != nil && err != io.EOF {
 			log.Fatal().Err(err)
@@ -82,7 +81,5 @@ func main() {
 		log.Fatal().Err(err)
 	}
 
-	fmt.Println(finalRes.Status)
-	fmt.Println(finalRes.Message)
 	fmt.Println(finalRes.FileName)
 }

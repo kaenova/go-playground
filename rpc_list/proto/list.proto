@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package rpc;
+
+option go_package = "rpc_list/service/list";
+
+message ReqBuffer {
+  repeated string Text = 1;
+}
+
+message ResBuffer {
+  /*
+    Status Field
+    0 = Failed
+    1 = Success
+  */
+  int32 TotalElement = 1;
+}
+
+service ListService {
+  rpc TotalElement(ReqBuffer) returns (ResBuffer) {}
+}

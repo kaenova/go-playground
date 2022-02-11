@@ -43,12 +43,11 @@ func main() {
 	}
 
 	// Read full image into a buffer
-	buff, err := ioutil.ReadFile("./test.png")
+	buff, err := ioutil.ReadFile("./test_fail.pdf")
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-
 	// Sending to Server
 	counter := 0
 	var minIdx, maxIdx int
@@ -59,8 +58,7 @@ func main() {
 		// Get Byte Data from minimumChunkIdx to maximumChunkIdx
 		buf := buff[minIdx:maxIdx]
 		err = svc.Send(&upload.ReqBuffer{
-			FileName: "Testing",
-			Data:     buf,
+			Data: buf,
 		})
 		if err != nil {
 			log.Fatal().Err(err)
@@ -76,11 +74,10 @@ func main() {
 
 	// Get final Data from Server
 	finalRes, err := svc.CloseAndRecv()
+	log.Info().Msg("Got into this")
 	if err != nil {
 		log.Fatal().Err(err)
 	}
 
-	fmt.Println(finalRes.Status)
-	fmt.Println(finalRes.Message)
 	fmt.Println(finalRes.FileName)
 }
