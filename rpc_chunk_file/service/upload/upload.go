@@ -1,7 +1,6 @@
 package upload
 
 import (
-	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -9,6 +8,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type Server struct {
@@ -24,15 +25,9 @@ func (s *Server) Upload(stream UploadService_UploadServer) error {
 			break
 		}
 		if err != nil {
-			return err
+			return status.Error(codes.DataLoss, "Dataloss when recieving bytes")
 		}
 		fullData = append(fullData, buff.Data...)
-	}
-	if _, err := os.Stat("./static"); os.IsNotExist(err) {
-		err := os.Mkdir("./static", 0666)
-		if err != nil {
-			return err
-		}
 	}
 
 	// Creating image from fullData (byte)
@@ -45,13 +40,12 @@ func (s *Server) Upload(stream UploadService_UploadServer) error {
 	case "image/png":
 		finalName += ".png"
 	default:
-		log.Info().Msg("Got into this")
-		return errors.New("format is not permitted")
+		return status.Error(codes.PermissionDenied, "Format is not permitted")
 	}
 
 	err := ioutil.WriteFile("./static/"+finalName, fullData, 0444)
 	if err != nil {
-		return err
+		return status.Error(codes.Internal, "Cannot create file")
 	}
 
 	log.Info().Msg("Successfull saving a file")

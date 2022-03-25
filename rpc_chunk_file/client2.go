@@ -20,6 +20,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 )
 
 func main() {
@@ -74,9 +75,9 @@ func main() {
 
 	// Get final Data from Server
 	finalRes, err := svc.CloseAndRecv()
-	log.Info().Msg("Got into this")
 	if err != nil {
-		log.Fatal().Err(err)
+		errStatus, _ := status.FromError(err)
+		log.Fatal().Msg(errStatus.Message())
 	}
 
 	fmt.Println(finalRes.FileName)

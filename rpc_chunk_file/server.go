@@ -21,6 +21,14 @@ func main() {
 		log.Error().Msg("Dotenv is not found, using machine environment")
 	}
 
+	// Init static folder if there's none
+	if _, err := os.Stat("./static"); os.IsNotExist(err) {
+		err := os.Mkdir("./static", 0666)
+		if err != nil {
+			log.Fatal().Msg("Cannot create static folder")
+		}
+	}
+
 	// Init RPC Server
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", os.Getenv("RPC_PORT")))
 	if err != nil {
