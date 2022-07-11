@@ -1,13 +1,11 @@
 package main
 
 import (
-	"context"
-	"log"
 	"os"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/kaenova/go-playground/s3_object/s3object"
 )
 
 func main() {
@@ -24,43 +22,53 @@ func main() {
 	secretAccessKey := os.Getenv("SECRET_ACCESS_KEY")
 	useSSL := true
 
-	ctx := context.Background()
-
-	// Initialize minio client object.
-	minioClient, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
-		Secure: useSSL,
-	})
-	if err != nil {
-		log.Fatalln(err)
-	}
-
 	// Make a new bucket called mymusic.
 	bucketName := "kaenova-test"
 	location := "default"
 
-	err = minioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{Region: location})
-	if err != nil {
-		// Check to see if we already own this bucket (which happens if you run this twice)
-		exists, errBucketExists := minioClient.BucketExists(ctx, bucketName)
-		if errBucketExists == nil && exists {
-			log.Printf("We already own %s\n", bucketName)
-		} else {
-			log.Fatalln(err)
+	s3, err := s3object.NewS3Object(endpoint, accessKeyID, secretAccessKey, bucketName, location, useSSL)
+
+	app := fiber.New()
+
+	app.Post("/", func(c *fiber.Ctx) error {
+
+		if form, err := c.MultipartForm(); err == nil {
+
+			// Get all files from "documents" key:
+			files := form.File["photo"]
+			// => []*multipart.FileHeader
+
+			// Loop through files:
+			for _, file := range files {
+				file, err := file.Open()
+				if err != nil {
+					return err
+				}
+				object, err := s3.UploadFileMultipart(file)
+				if err != nil {
+					return err
+				}
+				return c.JSON(fiber.Map{
+					"path": object.EndpointPath,
+				})
+			}
 		}
-	} else {
-		log.Printf("Successfully created %s\n", bucketName)
-	}
 
-	objectName := "test/6b1b7f04-6424-450e-b982-8bcddba3818g.png"
-	filePath := "6b1b7f04-6424-450e-b982-8bcddba3818b.png"
-	contentType := "image/png"
+		return err
+	})
 
-	// Upload the zip file with FPutObject
-	info, err := minioClient.FPutObject(ctx, bucketName, objectName, filePath, minio.PutObjectOptions{ContentType: contentType})
-	if err != nil {
-		log.Fatalln(err)
-	}
+	app.Listen(":3000")
 
-	log.Printf("Successfully uploaded %s of size %d\n", objectName, info.Size)
+	// Testing for local upload
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// a, err := s3.UploadFileFromPath("./6b1b7f04-6424-450e-b982-8bcddba3818b.png")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// log.Println(a)
+
 }
