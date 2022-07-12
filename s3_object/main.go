@@ -1,9 +1,9 @@
 package main
 
 import (
+	"log"
 	"os"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 	"github.com/kaenova/go-playground/s3_object/s3object"
 )
@@ -27,48 +27,50 @@ func main() {
 	location := "default"
 
 	s3, err := s3object.NewS3Object(endpoint, accessKeyID, secretAccessKey, bucketName, location, useSSL)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	app := fiber.New()
+	// app := fiber.New()
 
-	app.Post("/", func(c *fiber.Ctx) error {
+	// app.Post("/", func(c *fiber.Ctx) error {
 
-		if form, err := c.MultipartForm(); err == nil {
+	// 	if form, err := c.MultipartForm(); err == nil {
 
-			// Get all files from "documents" key:
-			files := form.File["photo"]
-			// => []*multipart.FileHeader
+	// 		// Get all files from "documents" key:
+	// 		files := form.File["photo"]
+	// 		// => []*multipart.FileHeader
 
-			// Loop through files:
-			for _, file := range files {
-				file, err := file.Open()
-				if err != nil {
-					return err
-				}
-				object, err := s3.UploadFileMultipart(file)
-				if err != nil {
-					return err
-				}
-				return c.JSON(fiber.Map{
-					"path": object.EndpointPath,
-				})
-			}
-		}
+	// 		// Loop through files:
+	// 		for _, file := range files {
+	// 			file, err := file.Open()
+	// 			if err != nil {
+	// 				return err
+	// 			}
+	// 			object, err := s3.UploadFileMultipart(file)
+	// 			if err != nil {
+	// 				return err
+	// 			}
+	// 			return c.JSON(fiber.Map{
+	// 				"path": object.EndpointPath,
+	// 			})
+	// 		}
+	// 	}
 
-		return err
-	})
+	// 	return err
+	// })
 
-	app.Listen(":3000")
+	// app.Listen(":3000")
 
 	// Testing for local upload
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
 
-	// a, err := s3.UploadFileFromPath("./6b1b7f04-6424-450e-b982-8bcddba3818b.png")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	a, err := s3.UploadFileFromPath("./6b1b7f04-6424-450e-b982-8bcddba3818b.png")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// log.Println(a)
+	b, err := s3.GetObjectPresigned(a.EndpointPath)
+
+	log.Println(b)
 
 }

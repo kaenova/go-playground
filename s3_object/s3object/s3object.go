@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
@@ -25,6 +26,7 @@ type S3Object struct {
 }
 
 type S3ObjectI interface {
+	GetObjectPresigned(objectPath string) (string, error)
 	UploadFileMultipart(file multipart.File) (objectOutput, error)
 	UploadFileFromPath(filePath string) (objectOutput, error)
 	DeleteObject(objectPath string) error
@@ -43,7 +45,7 @@ func NewS3Object(endpoint, accessKeyID, secretAcessKey, bucketName, location str
 	ctx := context.Background()
 
 	err := os.Mkdir("./tmp", 0644)
-	if err != nil {
+	if err != nil && !errors.Is(err, os.ErrExist) {
 		return nil, err
 	}
 
@@ -70,6 +72,16 @@ func NewS3Object(endpoint, accessKeyID, secretAcessKey, bucketName, location str
 		useSSL:     useSSL,
 		ctx:        ctx,
 	}, nil
+}
+
+// Generate temporary object URL for fetching, will expire in 1 minute
+func (s *S3Object) GetObjectPresigned(objectPath string) (string, error) {
+	objectPath = s.GetObjectPath(objectPath)
+	url, err := s.client.PresignedGetObject(s.ctx, s.bucketName, objectPath, time.Second*60, nil)
+	if err != nil {
+		return "", err
+	}
+	return url.String(), nil
 }
 
 // Upload file using local file instances. This will generate random path to the file.
@@ -124,6 +136,7 @@ func (s *S3Object) GetObjectPath(fullPathEndpoint string) string {
 
 // Delete based on object path or full path
 func (s *S3Object) DeleteObject(objectPath string) error {
+	objectPath = s.GetObjectPath(objectPath)
 	return s.client.RemoveObject(s.ctx, s.bucketName, objectPath, minio.RemoveObjectOptions{
 		ForceDelete: true,
 	})
@@ -175,7 +188,7 @@ func (s *S3Object) deleteTempFile(tempFile string) error {
 func (s *S3Object) generatePath() (string, error) {
 	finalPath := ""
 	for i := 0; i < 4; i++ {
-		path, err := s.randomString(10)
+		path, err := s.randomString(15)
 		if err != nil {
 			return "", err
 		}
@@ -224,7 +237,7 @@ func (s *S3Object) multiPartToByte(file multipart.File) ([]byte, error) {
 }
 
 func (s *S3Object) randomString(n int) (string, error) {
-	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
 	b := make([]byte, n)
 	for i := range b {
 		idx, err := rand.Int(rand.Reader, big.NewInt(int64(len(letterBytes))))
