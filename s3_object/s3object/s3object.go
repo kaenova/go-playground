@@ -29,8 +29,10 @@ type S3ObjectI interface {
 	GetObjectPresigned(objectPath string) (string, error)
 	UploadFileMultipart(file multipart.File) (objectOutput, error)
 	UploadFileFromPath(filePath string) (objectOutput, error)
+	UploadFileFromPathNamed(fileName, filePath string) (objectOutput, error)
 	DeleteObject(objectPath string) error
 	GetObjectPath(fullPathEndpoint string) string
+	ListObjectParentDir() []string
 }
 
 type objectOutput struct {
@@ -40,11 +42,11 @@ type objectOutput struct {
 }
 
 // Create new instace of S3 Object with MiniIO APIs
-// This also will create a "./tmp" folder for uploading from memory file (multipart)
-func NewS3Object(endpoint, accessKeyID, secretAcessKey, bucketName, location string, useSSL bool) (S3ObjectI, error) {
+// This also will create a "./temp" folder for uploading from memory file (multipart)
+func NewS3Object(endpoint, accessKeyID, secretAcessKey, bucketName string, useSSL bool) (S3ObjectI, error) {
 	ctx := context.Background()
 
-	err := os.Mkdir("./tmp", 0644)
+	err := os.Mkdir("./temp", 0644)
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		return nil, err
 	}
@@ -123,6 +125,35 @@ func (s *S3Object) UploadFileFromPath(filePath string) (objectOutput, error) {
 	return s.createObjectOutput(objectPathName), nil
 }
 
+// Upload file using local file paths. This will generate random path to the file.
+func (s *S3Object) UploadFileFromPathNamed(fileName, filePath string) (objectOutput, error) {
+	data, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return objectOutput{}, err
+	}
+	ext, err := s.getFileExtension(data)
+	if err != nil {
+		return objectOutput{}, err
+	}
+	fileName = fileName + ext
+	_, err = s.client.FPutObject(s.ctx, s.bucketName, fileName, filePath, minio.PutObjectOptions{})
+	if err != nil {
+		return objectOutput{}, err
+	}
+	return s.createObjectOutput(fileName), nil
+}
+
+func (s *S3Object) ListObjectParentDir() []string {
+	var obj []string
+	objectCh := s.client.ListObjects(s.ctx, s.bucketName, minio.ListObjectsOptions{})
+	for object := range objectCh {
+		if object.Err == nil {
+			obj = append(obj, object.Key)
+		}
+	}
+	return obj
+}
+
 // Convert from "https://example.com/bucket/file.jpg" to "file.jpg"
 // or from "bucket/file.jpg" to "file.jpg"
 func (s *S3Object) GetObjectPath(fullPathEndpoint string) string {
@@ -155,6 +186,7 @@ func (s *S3Object) createObjectOutput(objectPath string) objectOutput {
 	}
 }
 
+// Generate Random Object Path Name
 func (s *S3Object) generateObjectPathName(data []byte) (string, error) {
 	fileName, err := s.generateFileName(data)
 	if err != nil {
@@ -167,12 +199,13 @@ func (s *S3Object) generateObjectPathName(data []byte) (string, error) {
 	return path + fileName, nil
 }
 
+// Create Temporary Data File
 func (s *S3Object) createTempFile(data []byte) (string, error) {
 	objectPathName, err := s.generateFileName(data)
 	if err != nil {
 		return "", err
 	}
-	tempFile := "./tmp/" + objectPathName
+	tempFile := "./temp/" + objectPathName
 	err = ioutil.WriteFile(tempFile, data, 0644)
 	if err != nil {
 		return "", err
@@ -180,11 +213,13 @@ func (s *S3Object) createTempFile(data []byte) (string, error) {
 	return tempFile, nil
 }
 
+// Deleting Temp File
 func (s *S3Object) deleteTempFile(tempFile string) error {
 	// NOTE: Probably will cause bug if there's a concurent connection on uploading
 	return os.RemoveAll(tempFile)
 }
 
+// Generate Random Path
 func (s *S3Object) generatePath() (string, error) {
 	finalPath := ""
 	for i := 0; i < 4; i++ {
@@ -197,8 +232,23 @@ func (s *S3Object) generatePath() (string, error) {
 	return finalPath, nil
 }
 
+// Generate UUID File Name
 func (s *S3Object) generateFileName(data []byte) (string, error) {
-	mimeType := http.DetectContentType(data)
+	fileExtension, err := s.getFileExtension(data)
+	if err != nil {
+		return "", err
+	}
+	return uuid.New().String() + fileExtension, nil
+}
+
+// Detect Content Type outputing mime
+func (s *S3Object) detectContentType(data []byte) string {
+	return http.DetectContentType(data)
+}
+
+// Get registered file extension by bytes
+func (s *S3Object) getFileExtension(data []byte) (string, error) {
+	mimeType := s.detectContentType(data)
 	fileExtension := ""
 	switch mimeType {
 	case "image/jpeg":
@@ -213,13 +263,15 @@ func (s *S3Object) generateFileName(data []byte) (string, error) {
 	case "video/mp4":
 		fileExtension = fileExtension + ".mp4"
 		break
+	case "application/zip":
+		fileExtension = fileExtension + ".zip"
 	case "application/octet-stream":
 		return "", errors.New("unsupported file type")
 	}
-
-	return uuid.New().String() + fileExtension, nil
+	return fileExtension, nil
 }
 
+// Convert multipart byte to one part byte
 func (s *S3Object) multiPartToByte(file multipart.File) ([]byte, error) {
 	var finalByte []byte
 	b := make([]byte, 100)
@@ -236,6 +288,7 @@ func (s *S3Object) multiPartToByte(file multipart.File) ([]byte, error) {
 	return finalByte, nil
 }
 
+// Generate random string
 func (s *S3Object) randomString(n int) (string, error) {
 	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
 	b := make([]byte, n)

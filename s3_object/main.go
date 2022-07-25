@@ -24,9 +24,9 @@ func main() {
 
 	// Make a new bucket called mymusic.
 	bucketName := "kaenova-test"
-	location := "default"
+	// location := "default"
 
-	s3, err := s3object.NewS3Object(endpoint, accessKeyID, secretAccessKey, bucketName, location, useSSL)
+	s3, err := s3object.NewS3Object(endpoint, accessKeyID, secretAccessKey, bucketName, useSSL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -64,13 +64,18 @@ func main() {
 
 	// Testing for local upload
 
-	a, err := s3.UploadFileFromPath("./6b1b7f04-6424-450e-b982-8bcddba3818b.png")
-	if err != nil {
-		log.Fatal(err)
+	// a, err := s3.UploadFileFromPath("./6b1b7f04-6424-450e-b982-8bcddba3818b.png")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// b, err := s3.GetObjectPresigned(a.EndpointPath)
+
+	// log.Println(b)
+
+	objs := s3.ListObjectParentDir()
+	for _, obj := range objs {
+		s3.DeleteObject(obj)
 	}
-
-	b, err := s3.GetObjectPresigned(a.EndpointPath)
-
-	log.Println(b)
 
 }
