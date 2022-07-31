@@ -13,6 +13,7 @@ require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/aws/aws-sdk-go v1.43.5 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
+	github.com/go-resty/resty/v2 v2.7.0 // indirect
 	github.com/gofiber/fiber/v2 v2.35.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
