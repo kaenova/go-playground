@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 type anyPointer interface{}
@@ -39,8 +40,20 @@ func main() {
 
 	// a := "test"
 
+	fmt.Println("Before")
+	fmt.Println(a.F1)
+	fmt.Println(a.F2)
+	fmt.Println(a.F3)
+	fmt.Println(a.Other.F1)
+	fmt.Println(*a.Other.F2)
+	fmt.Println(a.Other.F3)
+	fmt.Println(*a.Other.F4[0])
+	fmt.Println(*a.Other.F4[1])
+	fmt.Println(*a.Other.F4[2])
+
 	ResolveS3(&a)
 
+	fmt.Println("\nAfter")
 	fmt.Println(a.F1)
 	fmt.Println(a.F2)
 	fmt.Println(a.F3)
@@ -93,7 +106,8 @@ func RecurseResolve(v reflect.Value, t reflect.Type, resolve bool) {
 	// Handle struct, resolve every field
 	if t.Kind() == reflect.Struct {
 		for i := 0; i < t.NumField(); i++ {
-			isTag := t.Field(i).Tag.Get(TargetTag) != ""
+			tagsVal := t.Field(i).Tag.Get(TargetTag)
+			isTag := strings.Contains(tagsVal, "resolve")
 			RecurseResolve(v.Field(i), t.Field(i).Type, isTag)
 		}
 		return
