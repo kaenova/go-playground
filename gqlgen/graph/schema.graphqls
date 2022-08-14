@@ -2,16 +2,22 @@
 #
 # https://gqlgen.com/getting-started/
 
+scalar Time
+
 type Todo {
   id: Int!
   text: String!
   done: Boolean!
   user: User!
+  createdAt: Time!
+  updatedAt: Time!
 }
 
 type User {
   id: Int!
   name: String!
+  createdAt: Time!
+  updatedAt: Time!
 }
 
 type Query {

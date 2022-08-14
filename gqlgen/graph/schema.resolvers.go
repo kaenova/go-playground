@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"time"
 
 	"github.com/kaenova/go-playground/gqlgen/graph/generated"
 	"github.com/kaenova/go-playground/gqlgen/graph/model"
@@ -15,10 +16,12 @@ import (
 func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (*model1.Todo, error) {
 	user := r.searchUserById(input.UserID)
 	todo := model1.Todo{
-		ID:   r.todosIdIncrement,
-		Text: input.Text,
-		Done: false,
-		User: &user,
+		ID:        r.todosIdIncrement,
+		Text:      input.Text,
+		Done:      false,
+		User:      &user,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 	r.todos = append(r.todos, &todo)
 	r.todosIdIncrement++
@@ -28,8 +31,10 @@ func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model1.User, error) {
 	user := model1.User{
-		ID:   r.userIdIncrement,
-		Name: input.Name,
+		ID:        r.userIdIncrement,
+		Name:      input.Name,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 	r.userIdIncrement++
 	r.users = append(r.users, &user)
