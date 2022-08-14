@@ -1,3 +1,9 @@
+/*
+Challange:
+Given types A and B, you need to change the string to "haha"
+to those struct with the field `s3:"resolve"`
+*/
+
 package main
 
 import (
