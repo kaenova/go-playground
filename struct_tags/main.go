@@ -7,17 +7,12 @@ to those struct with the field `s3:"resolve"`
 package main
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 )
 
 type anyPointer interface{}
-
-var (
-	ErrDataTypeNotDefined = errors.New("data type not defined")
-)
 
 const (
 	TargetTag = "s3"
@@ -87,9 +82,11 @@ func ResolveS3(d anyPointer) {
 
 func RecurseResolve(v reflect.Value, t reflect.Type, resolve bool) {
 
+	TAG := "HAHA"
+
 	// Only resolve if its a string
 	if t.Kind() == reflect.String && resolve {
-		v.SetString("haha")
+		v.SetString(TAG + " " + v.String())
 		return
 	}
 
@@ -118,5 +115,4 @@ func RecurseResolve(v reflect.Value, t reflect.Type, resolve bool) {
 		}
 		return
 	}
-
 }

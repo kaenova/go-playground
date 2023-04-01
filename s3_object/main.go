@@ -23,7 +23,7 @@ func main() {
 	useSSL := true
 
 	// Make a new bucket called mymusic.
-	bucketName := "kaenova-test"
+	bucketName := "s3.kaenova.my.id"
 	// location := "default"
 
 	s3, err := s3object.NewS3Object(endpoint, accessKeyID, secretAccessKey, bucketName, useSSL)
@@ -69,13 +69,13 @@ func main() {
 	// 	log.Fatal(err)
 	// }
 
-	// b, err := s3.GetObjectPresigned(a.EndpointPath)
+	b, err := s3.GetObjectPresigned("Datavidia/kaenova_lstms.csv")
 
-	// log.Println(b)
+	log.Println(b)
 
-	objs := s3.ListObjectParentDir()
-	for _, obj := range objs {
-		s3.DeleteObject(obj)
-	}
+	// objs := s3.ListObjectParentDir()
+	// for _, obj := range objs {
+	// 	s3.DeleteObject(obj)
+	// }
 
 }
